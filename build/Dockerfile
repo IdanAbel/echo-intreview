@@ -1,8 +1,9 @@
+# Backport patch - CVE-2024-7347
+
 FROM debian:bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# התקנת תלויות בנייה בלבד
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpcre2-dev \
@@ -26,9 +27,9 @@ WORKDIR /usr/src/nginx-${NGINX_VERSION}
 
 COPY patches/ /usr/src/patches/
 RUN for p in /usr/src/patches/*.patch; do \
-        if [ -f "$p" ]; then \
-            echo "===> Applying patch: $p <===" && patch -p1 < "$p"; \
-        fi; \
+    if [ -f "$p" ]; then \
+    echo "===> Applying patch: $p <===" && patch -p1 < "$p"; \
+    fi; \
     done
 
 RUN ./configure \
