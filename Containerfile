@@ -21,9 +21,11 @@ RUN dpkg -i /tmp/nginx.deb && rm /tmp/nginx.deb
 
 RUN mkdir -p /var/cache/nginx /var/log/nginx /etc/nginx/conf.d /etc/nginx/html /usr/share/nginx \
     && ln -sf /etc/nginx/html /usr/share/nginx/html \
-    && chown -R nginx:nginx /var/cache/nginx /var/log/nginx \
-    && echo '<!DOCTYPE html><html><head><title>Welcome to nginx!</title></head><body><h1>Welcome to nginx!</h1><p>If you see this page, the nginx web server is successfully installed and working.</p></body></html>' > /etc/nginx/html/index.html \
-    && echo '<!DOCTYPE html><html><head><title>Error</title></head><body><h1>An error occurred.</h1></body></html>' > /etc/nginx/html/50x.html
+    && chown -R nginx:nginx /var/cache/nginx /var/log/nginx
+
+COPY build/index.html /etc/nginx/html/index.html
+COPY build/index.html /usr/share/nginx/html/index.html
+RUN echo '<!DOCTYPE html><html><head><title>500 Internal Server Error</title></head><body><center><h1>An error occurred.</h1></center></body></html>' > /etc/nginx/html/50x.html
 
 RUN ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log
