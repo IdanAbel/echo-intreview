@@ -1,0 +1,26 @@
+
+
+----------------------------------------
+checking for C compiler
+
+
+----------------------------------------
+checking for --with-ld-opt="-Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie"
+
+clang: warning: argument unused during compilation: '-pie' [-Wunused-command-line-argument]
+ld: unknown options: -z -z --as-needed 
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+----------
+
+#include <sys/types.h>
+
+
+
+int main(void) {
+    ;
+    return 0;
+}
+
+----------
+cc -pipe -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -Wp,-D_FORTIFY_SOURCE=2 -fPIC -o objs/autotest objs/autotest.c -Wl,-z,relro -Wl,-z,now -Wl,--as-needed -pie
+----------
