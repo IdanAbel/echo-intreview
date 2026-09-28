@@ -7,6 +7,9 @@ Proves drop-in replacement behavior vs nginx:1.25-bookworm
 import subprocess
 import time
 import sys
+import socket
+import shlex
+from pathlib import Path
 import urllib.request
 import urllib.error
 
@@ -14,6 +17,9 @@ ORIGINAL_IMAGE = "nginx:1.25-bookworm"
 PATCHED_IMAGE  = "nginx-patched:latest"
 PORT_ORIGINAL  = 8081
 PORT_PATCHED   = 8082
+PORT_ORIGINAL_CONFIG = 8083
+PORT_PATCHED_CONFIG  = 8084
+CUSTOM_CONFIG = Path(__file__).parent / "fixtures" / "custom-default.conf"
 
 PASS = 0
 FAIL = 0
@@ -22,10 +28,10 @@ def run(cmd):
     subprocess.run(cmd, shell=True, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-def wait_for(port, timeout=15):
+def wait_for(port, path="/", timeout=15):
     for _ in range(timeout * 2):
         try:
-            urllib.request.urlopen(f"http://localhost:{port}/", timeout=1)
+            urllib.request.urlopen(f"http://localhost:{port}{path}", timeout=1)
             return True
         except Exception:
             time.sleep(0.5)
@@ -51,6 +57,25 @@ def check(name, orig, patched):
         print(f"       original: {orig}")
         print(f"       patched:  {patched}")
         FAIL += 1
+
+def raw_request(port, payload):
+    """Send an intentionally malformed request and return status, headers, body."""
+    with socket.create_connection(("localhost", port), timeout=5) as conn:
+        conn.sendall(payload)
+        chunks = []
+        while True:
+            chunk = conn.recv(4096)
+            if not chunk:
+                break
+            chunks.append(chunk)
+
+    head, body = b"".join(chunks).split(b"\r\n\r\n", 1)
+    lines = head.decode("iso-8859-1").split("\r\n")
+    headers = {}
+    for line in lines[1:]:
+        key, value = line.split(":", 1)
+        headers[key.lower()] = value.strip()
+    return lines[0], headers, body
 
 def main():
     print("\n══════════════════════════════════════════")
@@ -137,11 +162,52 @@ def main():
     check("patch NOT in original (CVE present)",  count_orig,  "0")
     check("patch IN patched image (CVE fixed)",   count_patch, "1")
 
+    # ────── TEST 8: Custom configuration ──────
+    # Mount the same replacement default.conf into both images. This verifies
+    # that a caller can supply nginx configuration without image-specific work.
+    print("\n── Test 8: custom configuration ──")
+    config_path = shlex.quote(str(CUSTOM_CONFIG.resolve()))
+    mount = f"-v {config_path}:/etc/nginx/conf.d/default.conf:ro"
+    run("docker rm -f orig_nginx_conf patched_nginx_conf 2>/dev/null || true")
+    run(f"docker run -d --name orig_nginx_conf -p {PORT_ORIGINAL_CONFIG}:80 "
+        f"{mount} {ORIGINAL_IMAGE}")
+    run(f"docker run -d --name patched_nginx_conf -p {PORT_PATCHED_CONFIG}:80 "
+        f"{mount} {PATCHED_IMAGE}")
+    assert wait_for(PORT_ORIGINAL_CONFIG, "/custom"), "❌ Original custom config failed"
+    assert wait_for(PORT_PATCHED_CONFIG, "/custom"), "❌ Patched custom config failed"
+    s8o, h8o, b8o = request(PORT_ORIGINAL_CONFIG, "/custom")
+    s8p, h8p, b8p = request(PORT_PATCHED_CONFIG, "/custom")
+    check("custom-config status", s8o, s8p)
+    check("custom-config Content-Type", h8o.get("Content-Type"), h8p.get("Content-Type"))
+    check("custom-config body", b8o, b8p)
+    run("docker rm -f orig_nginx_conf patched_nginx_conf")
+
+    # ────── TEST 9: Large request body ──────
+    # 2 MiB exceeds nginx's default 1 MiB limit. Both images must reject it
+    # in the same way rather than hanging or producing different responses.
+    print("\n── Test 9: POST / (large body) ──")
+    large_body = b"x" * (2 * 1024 * 1024)
+    s9o, h9o, b9o = request(PORT_ORIGINAL, "/", method="POST", data=large_body)
+    s9p, h9p, b9p = request(PORT_PATCHED,  "/", method="POST", data=large_body)
+    check("large-body status", s9o, s9p)
+    check("large-body Content-Type", h9o.get("Content-Type"), h9p.get("Content-Type"))
+    check("large-body body", b9o, b9p)
+
+    # ────── TEST 10: Malformed request ──────
+    # Use a raw socket because urllib cannot construct an invalid request line.
+    print("\n── Test 10: malformed HTTP request ──")
+    malformed = b"NOT-HTTP\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+    s10o, h10o, b10o = raw_request(PORT_ORIGINAL, malformed)
+    s10p, h10p, b10p = raw_request(PORT_PATCHED, malformed)
+    check("malformed-request status", s10o, s10p)
+    check("malformed-request Content-Type", h10o.get("content-type"), h10p.get("content-type"))
+    check("malformed-request body", b10o, b10p)
+
     print("\n══════════════════════════════════════════")
     print(f"   Results:  {PASS} passed  |  {FAIL} failed")
     print("══════════════════════════════════════════\n")
 
-    run("docker rm -f orig_nginx patched_nginx")
+    run("docker rm -f orig_nginx patched_nginx orig_nginx_conf patched_nginx_conf")
 
     if FAIL > 0:
         sys.exit(1)
@@ -151,5 +217,5 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"\n💥 Fatal error: {e}", file=sys.stderr)
-        run("docker rm -f orig_nginx patched_nginx 2>/dev/null || true")
+        run("docker rm -f orig_nginx patched_nginx orig_nginx_conf patched_nginx_conf 2>/dev/null || true")
         sys.exit(1)

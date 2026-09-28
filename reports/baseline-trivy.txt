@@ -827,8 +827,8 @@ Total: 743 (UNKNOWN: 25, LOW: 230, MEDIUM: 293, HIGH: 175, CRITICAL: 20)
 │                    │ CVE-2025-61147      │ LOW      │ affected     │                         │                         │ strukturag libde265 commit d9fea9d wa discovered to contain  │
 │                    │                     │          │              │                         │                         │ a segmenta ...                                               │
 │                    │                     │          │              │                         │                         │ https://avd.aquasec.com/nvd/cve-2025-61147                   │
-│                    ├─────────────────────┼──────────┤              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ CVE-2026-88373      │ UNKNOWN  │              │                         │                         │ libde265 commit 4d45a6b contains a NULL pointer dereference  │
+│                    ├─────────────────────┼──────────┼──────────────┤                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                    │ CVE-2026-88373      │ UNKNOWN  │ fix_deferred │                         │                         │ libde265 commit 4d45a6b contains a NULL pointer dereference  │
 │                    │                     │          │              │                         │                         │ vulnerabil ...                                               │
 │                    │                     │          │              │                         │                         │ https://avd.aquasec.com/nvd/cve-2026-88373                   │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
@@ -1258,34 +1258,36 @@ Total: 743 (UNKNOWN: 25, LOW: 230, MEDIUM: 293, HIGH: 175, CRITICAL: 20)
 │                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-18- │
 │                    │                     │          │              │                         │                         │ A2CE                                                         │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ TEMP-0000000-1ED20C │          │              │                         │                         │ [Out-of-bounds read in RGB-YCbCr identity-matrix colour      │
-│                    │                     │          │              │                         │                         │ conversion with mismatched per-channel bit depths]...        │
-│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-1E- │
-│                    │                     │          │              │                         │                         │ D20C                                                         │
-│                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ TEMP-0000000-1F4FF2 │          │              │                         │                         │ [Heap buffer overflow in SVT-AV1 encoder for high-bit-depth  │
-│                    │                     │          │              │                         │                         │ alpha channels]                                              │
-│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-1F- │
-│                    │                     │          │              │                         │                         │ 4FF2                                                         │
-│                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
 │                    │ TEMP-0000000-21F713 │          │              │                         │                         │ [GHSA-7pwf-qh74-p35w: Caller-configured security limits not  │
 │                    │                     │          │              │                         │                         │ enforced for MINI-box parsing]                               │
 │                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-21- │
 │                    │                     │          │              │                         │                         │ F713                                                         │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ TEMP-0000000-324AE3 │          │              │                         │                         │ [heap OOB read / info disclosure (Op_YCbCr420_to_RRGGBBaa]   │
-│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-32- │
-│                    │                     │          │              │                         │                         │ 4AE3                                                         │
+│                    │ TEMP-0000000-4EF776 │          │              │                         │                         │ [GHSA-9rj8-5mp5-26c9: Out-of-bounds read in RGB-YCbCr        │
+│                    │                     │          │              │                         │                         │ identity-matrix colour conversion with mismatched            │
+│                    │                     │          │              │                         │                         │ per-channel bit...                                           │
+│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-4E- │
+│                    │                     │          │              │                         │                         │ F776                                                         │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│                    │ TEMP-0000000-905912 │          │              │                         │                         │ [Heap buffer overflow in unci mixed-interleave decoding with │
-│                    │                     │          │              │                         │                         │ unequal chroma bit depths]...                                │
-│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-90- │
-│                    │                     │          │              │                         │                         │ 5912                                                         │
+│                    │ TEMP-0000000-78AC20 │          │              │                         │                         │ [GHSA-4jqm-2x34-6f6r: Heap buffer overflow in SVT-AV1        │
+│                    │                     │          │              │                         │                         │ encoder for high-bit-depth alpha channels]                   │
+│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-78- │
+│                    │                     │          │              │                         │                         │ AC20                                                         │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
 │                    │ TEMP-0000000-956D99 │          │              │                         │                         │ [GHSA-9c75-9g8r-4728: JPEG 2000 pclr zero-column allocation  │
 │                    │                     │          │              │                         │                         │ amplification bypasses max_total_memory]                     │
 │                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-95- │
 │                    │                     │          │              │                         │                         │ 6D99                                                         │
+│                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                    │ TEMP-0000000-BBE297 │          │              │                         │                         │ [GHSA-w7mc-p8jc-p853: heap OOB read / info disclosure        │
+│                    │                     │          │              │                         │                         │ (Op_YCbCr420_to_RRGGBBaa]                                    │
+│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-BB- │
+│                    │                     │          │              │                         │                         │ E297                                                         │
+│                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
+│                    │ TEMP-0000000-D1A721 │          │              │                         │                         │ [GHSA-x8r2-mggj-j6wr: Heap buffer overflow in unci           │
+│                    │                     │          │              │                         │                         │ mixed-interleave decoding with unequal chroma bit...         │
+│                    │                     │          │              │                         │                         │ https://security-tracker.debian.org/tracker/TEMP-0000000-D1- │
+│                    │                     │          │              │                         │                         │ A721                                                         │
 │                    ├─────────────────────┤          │              │                         ├─────────────────────────┼──────────────────────────────────────────────────────────────┤
 │                    │ TEMP-0000000-DB3DE2 │          │              │                         │                         │ [GHSA-qwpf-5wf7-r996: Heap-use-after-free and double free in │
 │                    │                     │          │              │                         │                         │ ImageItem::encode_to_bitstream_and_boxes (shallow copy of    │
@@ -2186,8 +2188,8 @@ Total: 743 (UNKNOWN: 25, LOW: 230, MEDIUM: 293, HIGH: 175, CRITICAL: 20)
 │                    │ CVE-2025-14104      │          │              │                         │                         │ util-linux: util-linux: Heap buffer overread in setpwnam()   │
 │                    │                     │          │              │                         │                         │ when processing 256-byte usernames                           │
 │                    │                     │          │              │                         │                         │ https://avd.aquasec.com/nvd/cve-2025-14104                   │
-├────────────────────┼─────────────────────┼──────────┤              ├─────────────────────────┼─────────────────────────┼──────────────────────────────────────────────────────────────┤
-│ libx11-6           │ CVE-2026-88806      │ HIGH     │              │ 2:1.8.4-2+deb12u2       │                         │ libX11: libX11: Heap-based buffer overflow via malicious X   │
+├────────────────────┼─────────────────────┼──────────┼──────────────┼─────────────────────────┼─────────────────────────┼──────────────────────────────────────────────────────────────┤
+│ libx11-6           │ CVE-2026-88806      │ HIGH     │ fix_deferred │ 2:1.8.4-2+deb12u2       │                         │ libX11: libX11: Heap-based buffer overflow via malicious X   │
 │                    │                     │          │              │                         │                         │ server                                                       │
 │                    │                     │          │              │                         │                         │ https://avd.aquasec.com/nvd/cve-2026-88806                   │
 ├────────────────────┤                     │          │              │                         ├─────────────────────────┤                                                              │

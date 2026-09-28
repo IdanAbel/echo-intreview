@@ -107,13 +107,15 @@ apt-get --only-upgrade install -y libssl3 openssl
 
 ```bash
 docker run --rm nginx:1.25-bookworm dpkg -l libssl3 | tail -1
-# TODO: paste the baseline version line (README of the first draft says 3.0.11-1~deb12u2)
+# ii  libssl3:arm64  3.0.11-1~deb12u2  arm64  Secure Sockets Layer toolkit - shared libraries
 
 docker run --rm nginx-patched:latest dpkg -l libssl3 | tail -1
-# TODO: paste the patched version line
+# ii  libssl3:arm64  3.0.22-1~deb12u1  arm64  Secure Sockets Layer toolkit - shared libraries
 
-# TODO: fixed version per the Debian security tracker for CVE-2024-0727 (bookworm): ____
+# Debian bookworm fixed version for CVE-2024-0727: 3.0.13-1~deb12u1
 ```
+
+The Debian security tracker lists `3.0.13-1~deb12u1` as the bookworm fixed version. The patched image is newer than that fixed version. [Debian security tracker](https://security-tracker.debian.org/tracker/CVE-2024-0727)
 
 Note: the total CVE count dropping from 743 to 306 is *not* evidence for this CVE. It reflects the smaller base image and the other upgraded libraries, so I do not use it as proof.
 
@@ -159,7 +161,7 @@ make vex   # writes reports/patched-trivy-vex.txt and reports/patched-grype-vex.
 
 The VEX changes only what the scanners *report*. It changes no code, and it is only as trustworthy as the statement inside it.
 
-**Limitation:** the PURL includes `arch=arm64` and the distro qualifier because the image was built on Apple silicon. TODO: state here whether the VEX also matches without qualifiers / on amd64 (I have not verified it).
+**Limitation:** the PURL includes `arch=arm64` and `distro=debian-12.15`, matching the image used to generate these reports. The VEX file was verified on arm64 only; an amd64 build must generate or validate its own matching PURL before this attestation is reused.
 
 ---
 
@@ -182,8 +184,11 @@ make test
 | `PATCH /` | Same handling of an unsupported method |
 | Log symlinks | `access.log` -> `/dev/stdout` on both images |
 | CVE-2024-7347 patch | Binary check: `0` matches in original, `1` in patched |
+| Custom config | The same mounted nginx config returns identical status, `Content-Type`, and body |
+| Large request body | A 2 MiB POST is rejected identically by both images |
+| Malformed HTTP request | A raw invalid request line returns the same status, `Content-Type`, and body |
 
-**Known gaps** (not covered yet): a custom configuration file, a large request body, a malformed request line, and a malformed MP4 against `ngx_http_mp4_module`. TODO: remove an item from this list once the test for it exists.
+**Known gap:** the suite does not yet send a malformed MP4 to `ngx_http_mp4_module`; therefore it verifies that the backport is compiled into the binary, but not the exploit behavior itself.
 
 ---
 
@@ -191,10 +196,10 @@ make test
 
 | Image | Size |
 |:------|:-----|
-| `nginx:1.25-bookworm` | ~187 MB |
-| `nginx-patched:latest` | ~121 MB |
+| `nginx:1.25-bookworm` | 193 MB |
+| `nginx-patched:latest` | 123 MB |
 
-The patched image is about 66 MB smaller. TODO: explain the difference after comparing `nginx -V` and the module list of both images (the official image ships extra dynamic modules, which is a likely cause). Until then, treat "drop-in" as verified for the scenarios in the test table only.
+The patched image is about 70 MB smaller. The upstream scan detects 144 OS packages while the patched scan detects 108. The replacement intentionally uses `debian:bookworm-slim`, installs only nginx runtime dependencies and does not include the upstream image's additional operating-system packages. Drop-in behavior is verified for the scenarios in the test table, not as a byte-for-byte image equivalent.
 
 ---
 
@@ -215,10 +220,10 @@ Baseline = `nginx:1.25-bookworm`, patched = `nginx-patched:latest`.
 
 | Metric | Baseline | Patched |
 |:-------|:---------|:--------|
-| Total matches | TODO | 299 |
-| Critical | TODO | 19 |
-| High | TODO | 69 |
-| Medium | TODO | 88 |
+| Total matches | 720 | 299 |
+| Critical | 47 | 19 |
+| High | 244 | 69 |
+| Medium | 249 | 88 |
 
 The scanners count differently (for example 306 vs 299 on the same image), so numbers should be compared within one scanner, not across scanners. Most of the reduction comes from the slimmer base image, not from the two CVE fixes.
 
@@ -226,11 +231,11 @@ The scanners count differently (for example 306 vs 299 on the same image), so nu
 
 ## Residual risk assessment
 
-**What is still there:** about 300 findings remain, almost all in system packages inherited from `debian:bookworm-slim` (for example `libc6`, `coreutils`, `util-linux`) with no upstream fix available (`affected` / `will_not_fix`).
+**What is still there:** 306 Trivy findings and 299 Grype matches remain. They are predominantly in OS packages (for example `libc6`, `coreutils`, and `util-linux`); the scanner reports include a mixture of `affected`, `will_not_fix`, and unknown fix status.
 
 **nginx package:** the scanners flag three CVEs on it: CVE-2023-44487 (false positive, see [VEX](#vex)), and CVE-2009-4487 / CVE-2013-0337 (Negligible / Low, not addressed).
 
-**Scanner blind spot (important):** Trivy and Grype compare my `1.25.5` against Debian's nginx `1.22.1-9+deb12uN` versions. A CVE that Debian has fixed in its 1.22.1 package is therefore treated as fixed for my "newer" 1.25.5, even when upstream 1.25.5 is actually vulnerable. That is exactly why CVE-2024-7347 is invisible to the scanners. The same effect can hide newer nginx CVEs. Debian lists, for example, CVE-2026-42945 and CVE-2026-9256 (both rated Critical, `ngx_http_rewrite_module`) as fixed in its bookworm nginx package. TODO: state here whether nginx 1.25.5 is affected by them (checked against the F5/nginx advisories) or write "not verified". I do not claim that no nginx CVEs with available fixes remain.
+**Scanner blind spot (important):** Trivy and Grype compare my `1.25.5` package against Debian nginx package versions. A CVE that Debian has fixed in its `1.22.1-9+deb12uN` package can therefore be treated as fixed for this newer-looking `1.25.5` version even if upstream `1.25.5` is vulnerable. That is exactly why CVE-2024-7347 is invisible to the scanners. I do not claim that no nginx CVEs with available fixes remain; upstream nginx advisories must be tracked separately.
 
 **What I would do next:**
 
@@ -248,16 +253,14 @@ The scanners count differently (for example 306 vs 299 on the same image), so nu
 
 ## AI usage
 
-TODO: list the tools actually used and for what. The first draft of the pipeline was structured with Gemini / Antigravity; the review, verification and README rewrite were done with Claude.
+Gemini / Antigravity helped structure the first pipeline. Claude was used for review, verification and the first README rewrite. Codex was used to compare the image against upstream, add compatibility coverage, rebuild the image, and re-run the tests and scans.
 
-- **Where it helped:** TODO (for example: structuring the Dockerfile pipeline, choosing the OpenVEX format, finding the PURL the scanners use).
-- **Where it hurt:** the first README contained an unverified claim about scanner behavior (CVE-2024-7347 "will continue to be flagged"). It was wrong and was corrected only after running the scans and inspecting the JSON output.
+- **Where it helped:** scaffolding the Docker build pipeline, identifying the OpenVEX format, extracting scanner PURLs, and proposing test cases.
+- **Where it hurt:** an early README asserted scanner behavior for CVE-2024-7347 without a scan result. That claim was wrong and was removed after inspecting the reports. All security assertions in this README are now tied to a command, binary check, or saved report.
 
 ## With more time
 
 - Send a malformed MP4 to the patched `ngx_http_mp4_module` and show that the worker survives, to prove the CVE-2024-7347 fix behaviorally and not only by string.
-- Add the missing tests: custom config, large body, malformed request line.
-- Match the official image's module set exactly and explain the size difference.
-- Verify whether nginx 1.25.5 is affected by the 2026 nginx CVEs and, if so, backport the fixes.
+- Verify upstream nginx advisories that are not visible to Debian-version-based scanners and backport applicable fixes.
 - Make the VEX architecture-independent and generate it automatically (for example with `vexctl`) instead of writing it by hand.
 - Build for `linux/amd64` as well as `arm64`.

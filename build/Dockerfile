@@ -26,6 +26,7 @@ RUN curl -fSL "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" -o ngin
 WORKDIR /usr/src/nginx-${NGINX_VERSION}
 
 COPY patches/ /usr/src/patches/
+COPY runtime/default.conf /usr/src/runtime/default.conf
 RUN for p in /usr/src/patches/*.patch; do \
     if [ -f "$p" ]; then \
     echo "===> Applying patch: $p <===" && patch -p1 < "$p"; \
@@ -67,6 +68,8 @@ RUN ./configure \
     --with-http_sub_module \
     --with-http_v2_module \
     --with-http_v3_module \
+    --with-mail \
+    --with-mail_ssl_module \
     --with-stream \
     --with-stream_realip_module \
     --with-stream_ssl_module \
@@ -74,7 +77,9 @@ RUN ./configure \
 
 RUN make -j$(nproc) && make DESTDIR=/tmp/pkg install
 
-RUN mkdir -p /tmp/pkg/DEBIAN && \
+RUN mkdir -p /tmp/pkg/DEBIAN /tmp/pkg/etc/nginx/conf.d && \
+    cp /usr/src/runtime/default.conf /tmp/pkg/etc/nginx/conf.d/default.conf && \
+    echo '/etc/nginx/conf.d/default.conf' > /tmp/pkg/DEBIAN/conffiles && \
     echo "Package: nginx" > /tmp/pkg/DEBIAN/control && \
     echo "Version: 1.25.5-1~custom.patched" >> /tmp/pkg/DEBIAN/control && \
     echo "Section: httpd" >> /tmp/pkg/DEBIAN/control && \
